@@ -3,6 +3,7 @@ module Segmentation  where
 import Data.Word
 import System.IO
 import Data.Char
+import System.Environment
 
 data Rgb = Rgb { red   :: Word8
                , green :: Word8
@@ -12,25 +13,25 @@ data Rgb = Rgb { red   :: Word8
     show (Rgb r g b) = show r ++ " " ++ show g ++ " " ++ show b
 --}
 
-{- function is used in saveImage -}
-printColor :: Rgb -> String
-printColor (Rgb r g b) = show r ++ " " ++ show g ++ " " ++ show b
-
 data Pixel = Pixel { color   :: Rgb
                    , cluster :: Rgb
                    , distance  :: Double } deriving (Show,Read)
 
-
 data Image = Image { width   :: Int
                    , height  :: Int
-                   , content :: [[Rgb]] } deriving (Show, Read, Eq)
+                   , content :: [[Pixel]] } deriving (Show, Read)
+
+
+{- function is used in saveImage -}
+printCluster :: Pixel -> String
+printCluster (Pixel _ (Rgb r g b) _) = show r ++ " " ++ show g ++ " " ++ show b
+
+
+defaultCluster = (Rgb 0 0 0)
 
 {-- actually, this function multiplies any Integral number, but returns Word8 --}
 multWord8WithFrac :: (RealFrac a) => Word8 -> a -> Word8
 multWord8WithFrac w n = round (fromIntegral w * n) :: Word8
-
-
-{-- Б --}
 
 clamp :: Int -> Word8
 clamp n 
@@ -53,10 +54,11 @@ saveImage :: FilePath -> Image -> IO()
 saveImage path img = do 
                     writeFile path header
                     appendFile path (maxColorValue ++ "\n")
-                    appendFile path $ unlines (map printColor pixels)
-                    where header = "P3\n" ++ show (width img) ++ " " ++ show (height img) ++ "\n"
+                    appendFile path $ unlines (map printCluster pixels) --lazy
+                    where header        = "P3\n" ++ show (width img) ++ " " ++ show (height img) ++ "\n"
                           maxColorValue = show 255
-                          pixels = concat $ content img
+                          pixels        = concat $ content img
+
 
 {-- Д --}
 
@@ -66,15 +68,18 @@ getWidth ln = read (ln !! 0) :: Int
 getHeight :: [String] -> Int
 getHeight ln = read (ln !! 1) :: Int
 
-extractRow :: (Eq t, Num t) => t -> [String] -> [Rgb]
+extractRow :: (Eq t, Num t) => t -> [String] -> [Pixel]
 extractRow 0 _ = []
 extractRow _ [] = []
-extractRow w lst@(r:g:b:rest) = (Rgb (read r :: Word8) (read g :: Word8) (read b :: Word8)) : extractRow (w - 1) rest 
+extractRow w lst@(r:g:b:rest) = (Pixel (Rgb (read r :: Word8) (read g :: Word8) (read b :: Word8))
+                                        defaultCluster
+                                        maxDist) : extractRow (w - 1) rest
+                            where maxDist       = fromIntegral (maxBound :: Int)
 extractRow _ _ = error "Wrong file structure!"
 
-extractColors :: (Eq t, Num t) => Int -> t -> [String] -> [[Rgb]]
-extractColors _ 0 _ = []
-extractColors w h lst = extractRow w lst : extractColors w (h - 1) (drop (w * 3) lst)
+extractPixels :: (Eq t, Num t) => Int -> t -> [String] -> [[Pixel]]
+extractPixels _ 0 _ = []
+extractPixels w h lst = extractRow w lst : extractPixels w (h - 1) (drop (w * 3) lst)
 
 parseImg :: [String] -> Image
 parseImg (f:x:y:xs) 
@@ -83,8 +88,10 @@ parseImg (f:x:y:xs)
                         where firstLineWords = (words x)
                               width = getWidth firstLineWords
                               height = getHeight firstLineWords
-                              pixels = extractColors width height $ words (unlines xs)
+                              pixels = extractPixels width height $ words (unlines xs)
 
+selectWithComparator :: (a -> a -> a) -> [a] -> a
+selectWithComparator cmp lst = foldl1 (\acc x -> cmp acc x) lst
 
 loadImage :: String -> IO Image
 loadImage path = do contents <- readFile path
@@ -92,7 +99,13 @@ loadImage path = do contents <- readFile path
                         img = parseImg linesOfFile
                     return img
 
-comp pathFrom pathTo = do
-                        img <- loadImage pathFrom
-                        let pixels = rgbToPixel (content img)
-                        print pixels
+main = do
+    args <- getArgs
+    progName <- getProgName
+    case args of (pathFrom:nrOfClusters:pathTo:[]) -> if (read nrOfClusters :: Int) < 1 then error "Number of clusters must be greater than 0"
+                                                                                        else do
+                                                                                            img <- loadImage pathFrom
+                                                                                            saveImage pathTo img
+                 _                                  -> error ("Usage: " ++ progName ++ " inputFilePath numberOfClusters outputFilePath") 
+                                    
+    
