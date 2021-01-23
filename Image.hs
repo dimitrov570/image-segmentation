@@ -94,4 +94,5 @@ loadImage :: String -> IO Image
 loadImage path = do contents <- readFile path
                     let linesOfFile = lines contents
                         img = parseImg linesOfFile
-                    return img
+                    if (length (content img) /= (height img)) || (length (content img !! 0) /= (width img)) then error "Bad file structure"
+                                                                                                            else return img
