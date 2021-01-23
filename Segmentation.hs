@@ -11,29 +11,28 @@ imageSegmentation img@(Image w h pixels) nrOfClusters = img
 selectWithComparator :: (a -> a -> a) -> [a] -> a
 selectWithComparator cmp lst = foldl1 (\acc x -> cmp acc x) lst
 
-getElementsWithStep :: Int -> Int -> [[Pixel]] -> [[Pixel]]
-getElementsWithStep _ _ []     = []
-getElementsWithStep 0 s (x:xs) = x:(getElementsWithStep s s xs)
-getElementsWithStep n s (x:xs) = getElementsWithStep (n - 1) s xs 
-
-extractClusters :: Int -> Int -> Int -> [[Pixel]] -> [Pixel] 
-extractClusters _ _ _ [] = []
-extractClusters s r limit (x:xs) = (x !! index):(extractClusters s (r+1) limit xs)
-                            where index = overloadInt (s * r) limit 
 
 overloadInt :: Int -> Int -> Int
 overloadInt n limit = if n > limit then (n - limit)
                                    else n
 
+{-- returns list of every "s"-th row starting from 0 --}
+getPixelRowsWithStep :: Int -> Int -> [[Pixel]] -> [[Pixel]]
+getPixelRowsWithStep _ _ []     = []
+getPixelRowsWithStep 0 s (x:xs) = x:(getPixelRowsWithStep s s xs)
+getPixelRowsWithStep n s (x:xs) = getPixelRowsWithStep (n - 1) s xs 
+
+
+{-- extracts "s*r"-th pixel from list of pixels, where "s" is step, "r" is current row --}
+extractClusters :: Int -> Int -> Int -> [[Pixel]] -> [Pixel] 
+extractClusters _ _ _ [] = []
+extractClusters s r limit (x:xs) = (x !! index):(extractClusters s (r+1) limit xs)
+                            where index = overloadInt (s * r) limit 
+
+{-- selects pixels from image as inital clusters at the begining --}
 initClusters :: Int -> [[Pixel]] -> [Pixel]
-initClusters c pixels = extractClusters step 0 (length (pixels !! 0) - 1) $ take c (getElementsWithStep 0 step pixels)
+initClusters c pixels = extractClusters step 0 (length (pixels !! 0) - 1) $ take c (getPixelRowsWithStep 0 step pixels)
                 where step    = (length pixels `div` c) - 1
-
-
-selectclstrs :: Int -> [Int] -> [Int]
-selectclstrs c lst@(x:y:xs) = take c (filter (\x -> x `mod` m == 0) lst)
-                    where l = length lst
-                          m = l `div` c
 
 main = do
     args <- getArgs
