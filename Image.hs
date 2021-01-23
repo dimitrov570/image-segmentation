@@ -12,7 +12,7 @@ data Rgb = Rgb { red   :: Word8
 
 data Pixel = Pixel { color   :: Rgb
                    , cluster :: Rgb
-                   , distance  :: Double } deriving (Show,Read)
+                   , distance  :: Integer } deriving (Show,Read)
 
 data Image = Image { width   :: Int
                    , height  :: Int
@@ -75,7 +75,7 @@ extractRow w lst@(r:g:b:rest) = (Pixel (Rgb (read r :: Word8) (read g :: Word8) 
                             where maxDist       = fromIntegral (maxBound :: Int)
                                   defaultCluster = (Rgb 0 0 0)
 
-extractRow _ _ = error "Wrong file structure!"
+extractRow _ _ = error "Bad file structure!"
 
 extractPixels :: (Eq t, Num t) => Int -> t -> [String] -> [[Pixel]]
 extractPixels _ 0 _ = []
