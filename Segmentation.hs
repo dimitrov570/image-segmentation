@@ -26,7 +26,7 @@ overloadInt n limit = if n > limit then (n - limit)
                                    else n
 
 initClusters :: Int -> [[Pixel]] -> [Pixel]
-initClusters c pixels = extractClusters step 0 (length (pixels !! 0)) $ take c (getElementsWithStep 0 step pixels)
+initClusters c pixels = extractClusters step 0 (length (pixels !! 0) - 1) $ take c (getElementsWithStep 0 step pixels)
                 where step    = (length pixels `div` c) - 1
 
 
