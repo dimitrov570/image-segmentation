@@ -23,6 +23,8 @@ data Image = Image { width   :: Int
 printCluster :: Pixel -> String
 printCluster (Pixel _ (Rgb r g b) _) = show r ++ " " ++ show g ++ " " ++ show b
 
+printColor :: Pixel -> String
+printColor (Pixel (Rgb r g b) _ _) = show r ++ " " ++ show g ++ " " ++ show b
 
 {-- actually, this function multiplies any Integral number, but returns Word8 --}
 multWord8WithFrac :: (RealFrac a) => Word8 -> a -> Word8
@@ -43,14 +45,20 @@ rgbToPixel xs = map (\x -> Pixel x (Rgb 0 0 0) maxDist) $ concat xs
 
 {- FUNCTION FOR SAVING IMAGE TO FILE -}
 
-saveImage :: FilePath -> Image -> IO()
-saveImage path img = do 
-                    writeFile path header
-                    appendFile path (maxColorValue ++ "\n")
-                    appendFile path $ unlines (map printCluster pixels) --lazy
-                    where header        = "P3\n" ++ show (width img) ++ " " ++ show (height img) ++ "\n"
-                          maxColorValue = show 255
-                          pixels        = concat $ content img
+saveImageClusters :: FilePath -> Image -> IO()
+saveImageClusters = saveImage printCluster
+
+saveImageColors :: FilePath -> Image -> IO()
+saveImageColors = saveImage printColor
+
+saveImage :: (Pixel -> String) -> FilePath -> Image -> IO()
+saveImage whatToSave path img = do 
+                            writeFile path header
+                            appendFile path (maxColorValue ++ "\n")
+                            appendFile path $ unlines (map whatToSave pixels) --lazy
+                            where header        = "P3\n" ++ show (width img) ++ " " ++ show (height img) ++ "\n"
+                                  maxColorValue = show 255
+                                  pixels        = concat $ content img
 
 getWidth :: [String] -> Int
 getWidth ln = read (ln !! 0) :: Int
