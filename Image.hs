@@ -12,10 +12,6 @@ data LargeRgb = LargeRgb { largeRed   :: Integer
 
 toLarge :: Rgb -> LargeRgb
 toLarge (Rgb r g b) = (LargeRgb (toInteger r) (toInteger g) (toInteger b))                                                             
-                               
-{-- instance Show Rgb where
-    show (Rgb r g b) = show r ++ " " ++ show g ++ " " ++ show b
---}
 
 data Pixel = Pixel { color   :: Rgb
                    , cluster :: Rgb
@@ -26,7 +22,7 @@ data Image = Image { width   :: Int
                    , content :: [[Pixel]] } deriving (Show, Read)
 
 
-{- function is used in saveImage -}
+{- functions used in saveImage -}
 printCluster :: Pixel -> String
 printCluster (Pixel _ (Rgb r g b) _) = show r ++ " " ++ show g ++ " " ++ show b
 
@@ -50,7 +46,7 @@ rgbToPixel xs = map (\x -> Pixel x (Rgb 0 0 0) maxDist) $ concat xs
                     where maxDist = fromIntegral (maxBound :: Int)
 
 
-{- FUNCTION FOR SAVING IMAGE TO FILE -}
+{- FUNCTIONS FOR SAVING IMAGE TO FILE -}
 
 saveImageClusters :: FilePath -> Image -> IO()
 saveImageClusters = saveImage printCluster
@@ -81,7 +77,6 @@ extractRow w lst@(r:g:b:rest) = (Pixel (Rgb (read r :: Word8) (read g :: Word8) 
                                         maxDist) : extractRow (w - 1) rest
                             where maxDist       = fromIntegral (maxBound :: Int)
                                   defaultCluster = (Rgb 0 0 0)
-
 extractRow _ _ = error "Bad file structure!"
 
 extractPixels :: (Eq t, Num t) => Int -> t -> [String] -> [[Pixel]]
