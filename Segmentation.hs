@@ -13,12 +13,12 @@ recomputeClusters :: [[Pixel]] -> [Rgb] -> ([Rgb], Bool)
 recomputeClusters pixels oldClusters = (newClusters, isChanged)
                             where clusterMap                                                 = Map.fromList $ map (\x -> (x, ((LargeRgb 0 0 0),0))) oldClusters
                                   updatedMap                                                 = foldl updateHelper clusterMap $ concat pixels
-                                  updateHelper                                               = (\acc x -> Map.insertWith inserter (cluster x) (toLarge $ color x) acc)
+                                  updateHelper                                               = (\acc x -> Map.insertWith inserter (cluster x) (transformRgb $ color x) acc)
                                   inserter ((LargeRgb r1 g1 b1),n1) ((LargeRgb r2 g2 b2),n2) = ((LargeRgb (r1 + r2) 
                                                                                                           (g1 + g2)
                                                                                                           (b1 + b2)),
                                                                                                 n1 + n2)  
-                                  toLarge (Rgb r g b)                                        = ((LargeRgb (toInteger r) (toInteger g) (toInteger b)), 1)                                                             
+                                  transformRgb rgb                                           = ((toLarge rgb),1)   
                                   newClusters                                                = map (\(_, ((LargeRgb r g b), n)) -> (Rgb (clamp $ round (fromInteger r / n))
                                                                                                                                         (clamp $ round (fromInteger g / n))
                                                                                                                                         (clamp $ round (fromInteger b / n)))) $ Map.toList updatedMap

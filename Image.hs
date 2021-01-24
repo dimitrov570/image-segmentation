@@ -4,8 +4,15 @@ import Data.Word
 
 data Rgb = Rgb { red   :: Word8
                , green :: Word8
-               , blue  :: Word8 } deriving (Show, Read, Eq)
+               , blue  :: Word8 } deriving (Show, Read, Eq, Ord)
 
+data LargeRgb = LargeRgb { largeRed   :: Integer
+                         , largeGreen :: Integer
+                         , largeBlue  :: Integer } deriving (Show, Read, Eq, Ord)
+
+toLarge :: Rgb -> LargeRgb
+toLarge (Rgb r g b) = (LargeRgb (toInteger r) (toInteger g) (toInteger b))                                                             
+                               
 {-- instance Show Rgb where
     show (Rgb r g b) = show r ++ " " ++ show g ++ " " ++ show b
 --}
