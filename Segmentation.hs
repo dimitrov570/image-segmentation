@@ -9,10 +9,8 @@ import qualified Data.Map as Map
 imageSegmentation :: Image -> Int -> Image
 imageSegmentation img@(Image w h pixels) nrOfClusters = (Image w h (setNewClusters pixels $ initClusters nrOfClusters pixels))
 
-recomputeClusters :: [[Pixel]] -> [Rgb] -> [Rgb]
-recomputeClusters pixels oldClusters = map (\(_, ((LargeRgb r g b), n)) -> (Rgb (clamp $ round (fromInteger r / n))
-                                                                                (clamp $ round (fromInteger g / n))
-                                                                                (clamp $ round (fromInteger b / n)))) $ Map.toList updatedMap
+recomputeClusters :: [[Pixel]] -> [Rgb] -> ([Rgb], Bool)
+recomputeClusters pixels oldClusters = (newClusters, isChanged)
                             where clusterMap                                                 = Map.fromList $ map (\x -> (x, ((LargeRgb 0 0 0),0))) oldClusters
                                   updatedMap                                                 = foldl updateHelper clusterMap $ concat pixels
                                   updateHelper                                               = (\acc x -> Map.insertWith inserter (cluster x) (toLarge $ color x) acc)
@@ -21,7 +19,11 @@ recomputeClusters pixels oldClusters = map (\(_, ((LargeRgb r g b), n)) -> (Rgb 
                                                                                                           (b1 + b2)),
                                                                                                 n1 + n2)  
                                   toLarge (Rgb r g b)                                        = ((LargeRgb (toInteger r) (toInteger g) (toInteger b)), 1)                                                             
-                                  
+                                  newClusters                                                = map (\(_, ((LargeRgb r g b), n)) -> (Rgb (clamp $ round (fromInteger r / n))
+                                                                                                                                        (clamp $ round (fromInteger g / n))
+                                                                                                                                        (clamp $ round (fromInteger b / n)))) $ Map.toList updatedMap
+                                  isChanged                                                  = oldClusters /= newClusters
+
 overloadInt :: Int -> Int -> Int
 overloadInt n limit = if n > limit then (n - limit)
                                    else n
